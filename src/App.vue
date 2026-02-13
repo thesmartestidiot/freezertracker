@@ -1,47 +1,48 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+import { computed, reactive } from "vue";
+import RowComp from "@/components/RowComp.vue";
+import AddItemModal from "@/components/AddItemModal.vue";
+
+const rows = reactive([
+  { id: 1, label: "Chuck Steak", quantity: 1 },
+  { id: 2, label: "Ribeye", quantity: 2 },
+  { id: 3, label: "T-Bone", quantity: 3 },
+  { id: 4, label: "Sirloin", quantity: 4 },
+  { id: 5, label: "Brisket", quantity: 5 },
+  { id: 6, label: "Flank", quantity: 6 },
+  { id: 7, label: "Skirt", quantity: 7 },
+  { id: 8, label: "New Item", quantity: 1 },
+]);
+
+const sortedRows = computed(() => {
+  return [...rows].sort((a, b) => a.label.localeCompare(b.label));
+});
+
+const updateQuantity = (id: number, quantity: number) => {
+  const row = rows.find((r) => r.id === id);
+  if (row) {
+    row.quantity = Math.max(0, quantity);
+  }
+};
+
+const addItem = (label: string) => {
+  const newId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
+  rows.push({ id: newId, label, quantity: 0 });
+};
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+  <div class="flex h-screen w-screen items-center justify-center bg-gray-900">
+    <div class="w-full p-6 bg-gray-800 rounded-lg">
+      <div class="space-y-4 h-64 overflow-y-auto">
+        <RowComp
+          v-for="row in sortedRows"
+          :key="row.id"
+          :row="row"
+          @update:quantity="(value) => updateQuantity(row.id, value)"
+        />
+      </div>
+      <AddItemModal @add-item="addItem" />
     </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  </div>
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
-</style>
