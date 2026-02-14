@@ -37,7 +37,7 @@ const addItem = (label: string) => {
 </script>
 
 <template>
-  <div class="h-screen w-screen bg-gray-900 p-2">
+  <div class="h-screen w-screen bg-gray-900 p-4">
     <div class="mx-auto flex h-full w-full flex-col overflow-hidden rounded-lg bg-gray-800">
       <header class="flex items-center gap-4 border-b border-gray-700 p-4">
         <img src="./assets/doggo.png" alt="" class="h-14 w-14 rounded-lg object-cover" />
