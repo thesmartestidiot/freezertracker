@@ -12,6 +12,11 @@ const rows = reactive([
   { id: 6, label: 'Flank', quantity: 6 },
   { id: 7, label: 'Skirt', quantity: 7 },
   { id: 8, label: 'New Item', quantity: 1 },
+  { id: 9, label: 'Another Item', quantity: 2 },
+  { id: 10, label: 'More Item', quantity: 3 },
+  { id: 11, label: 'Chicken', quantity: 4 },
+  { id: 12, label: 'Pork', quantity: 5 },
+  { id: 13, label: 'Fish', quantity: 6 },
 ])
 
 const sortedRows = computed(() => {
@@ -27,23 +32,34 @@ const updateQuantity = (id: number, quantity: number) => {
 
 const addItem = (label: string) => {
   const newId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1
-  rows.push({ id: newId, label, quantity: 0 })
+  rows.push({ id: newId, label, quantity: 1 })
 }
 </script>
 
 <template>
-  <div class="flex flex-col h-screen w-screen items-center justify-center bg-gray-900">
-    <img src="./assets/doggo.png" alt="" />
-    <div class="w-full p-6 bg-gray-800 rounded-lg">
-      <div class="space-y-4 h-64 overflow-y-auto">
+  <div class="h-screen w-screen bg-gray-900 p-2">
+    <div class="mx-auto flex h-full w-full flex-col overflow-hidden rounded-lg bg-gray-800">
+      <header class="flex items-center gap-4 border-b border-gray-700 p-4">
+        <img src="./assets/doggo.png" alt="" class="h-14 w-14 rounded-lg object-cover" />
+        <div>
+          <h1 class="text-xl font-semibold text-white">Freezer Tracker</h1>
+          <p class="text-sm text-gray-300">Manage your inventory</p>
+        </div>
+      </header>
+
+      <main class="min-h-0 flex-1 overflow-y-auto p-4 space-y-4">
         <RowComp
           v-for="row in sortedRows"
           :key="row.id"
           :row="row"
           @update:quantity="(value) => updateQuantity(row.id, value)"
         />
-      </div>
-      <AddItemModal @add-item="addItem" />
+      </main>
+
+      <footer class="flex justify-between items-center w-full border-t border-gray-700 p-4">
+        <div class="text-xl text-gray-300">{{ sortedRows.length }} items</div>
+        <AddItemModal @add-item="addItem" />
+      </footer>
     </div>
   </div>
 </template>
