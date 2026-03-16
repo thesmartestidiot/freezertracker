@@ -78,19 +78,19 @@ The existing frontend files (src/, public/, package.json, vite configs, tsconfig
 | item_id | INTEGER FK | → items.id  |
 | tag_id  | INTEGER FK | → tags.id   |
 
-Composite primary key on (item_id, tag_id).
+Composite primary key on (item_id, tag_id). ON DELETE CASCADE for both FKs.
 
 ### quantity_log
 
 | Column       | Type       | Notes              |
 |--------------|------------|--------------------|
 | id           | INTEGER PK | autoincrement      |
-| item_id      | INTEGER FK | → items.id         |
+| item_id      | INTEGER FK | → items.id (ON DELETE CASCADE) |
 | old_quantity | REAL        | value before change |
 | new_quantity | REAL        | value after change  |
 | changed_at   | TIMESTAMP  | auto on insert     |
 
-Every quantity mutation on an item writes a row here. This table powers future trend/usage analytics.
+Every quantity mutation on an item writes a row here. This table powers future trend/usage analytics. Rows are cascade-deleted when the parent item is deleted (historical data for deleted items is not retained).
 
 ## API Design
 
@@ -119,17 +119,80 @@ All endpoints are prefixed with `/api`.
 |----------|---------------------------|------------------------------|
 | GET      | /api/items/{id}/history   | Get quantity change log.     |
 
+### Pydantic Schemas (backend/models.py)
+
+```python
+class CreateItemRequest(BaseModel):
+    name: str
+    quantity: float = 1
+    unit: str | None = None
+    tags: list[str] = []  # tag names, auto-created if unknown
+
+class UpdateItemRequest(BaseModel):
+    name: str | None = None
+    quantity: float | None = None
+    unit: str | None = None
+    tags: list[str] | None = None
+
+class TagResponse(BaseModel):
+    id: int
+    name: str
+    color: str | None
+
+class ItemResponse(BaseModel):
+    id: int
+    name: str
+    quantity: float
+    unit: str | None
+    barcode: str | None
+    tags: list[TagResponse]
+    created_at: str
+    updated_at: str
+
+class CreateTagRequest(BaseModel):
+    name: str
+    color: str | None = None
+```
+
+### TypeScript Request Types (frontend)
+
+```typescript
+interface CreateItemRequest {
+  name: string
+  quantity?: number
+  unit?: string | null
+  tags?: string[]
+}
+
+interface UpdateItemRequest {
+  name?: string
+  quantity?: number
+  unit?: string | null
+  tags?: string[]
+}
+
+interface CreateTagRequest {
+  name: string
+  color?: string | null
+}
+```
+
 ### Request/Response Notes
 
-- Tag assignment happens inline: POST/PATCH items accept a `tags` array of tag names. Unknown tag names are created automatically.
+- Tag assignment happens inline: POST/PATCH items accept a `tags` array of tag names. Unknown tag names are created automatically with `color: null`. Tag name matching is case-insensitive.
+- All item responses use the `ItemResponse` shape directly (no wrapper envelope).
 - All item responses include populated tags (name + color).
 - Quantity changes via PATCH automatically log old → new in quantity_log. The client sends the desired quantity; the server handles history.
+- Quantity must be >= 0. Enforced server-side via Pydantic validator. Client also enforces in UI.
+- `GET /api/items?tag=freezer` filters by a single tag name. Multiple `?tag=` params for AND filtering (e.g., `?tag=freezer&tag=meat`).
+- Sorting is a frontend concern. API returns items ordered by `id`.
+- Error responses use FastAPI defaults: 422 for validation errors, 404 for not-found, 409 for duplicate tag names.
 
 ## Frontend Changes
 
 ### Types
 
-Replace the current `Row` interface with:
+Replace the current `Row` interface (note: the existing code uses `label` — this is renamed to `name` to match the API):
 
 ```typescript
 interface Tag {
@@ -164,7 +227,7 @@ A module with typed functions wrapping `fetch` calls:
 
 ### Component Changes
 
-- **App.vue:** Replace hardcoded reactive array with a `ref<Item[]>` populated by `fetchItems()` on mount. All mutations call the API then refresh or optimistically update local state.
+- **App.vue:** Replace hardcoded reactive array with a `ref<Item[]>` populated by `fetchItems()` on mount. Mutations call the API then refetch the full list (simple and consistent; optimistic updates are unnecessary at household scale).
 - **RowComp.vue:** Update props from `Row` to `Item`. Display optional unit next to quantity. Show tag badges.
 - **AddItemModal.vue:** Add optional unit input field and tag selector (pick existing tags or type to create new ones).
 - **New: Tag filter bar** in App.vue header area — horizontal list of tag pills to filter the displayed items.
@@ -180,6 +243,23 @@ server: {
   }
 }
 ```
+
+### CORS Configuration
+
+Development: allow `http://localhost:5173` (Vite dev server).
+Production: not needed — nginx serves both frontend and API from the same origin.
+
+Configure via FastAPI's `CORSMiddleware` with origins list, defaulting to permissive for LAN-only use.
+
+### Directory Restructure Migration
+
+The move from root to `frontend/` should happen as a dedicated commit before any backend work:
+
+1. Create `frontend/` directory
+2. Move all frontend files (src/, public/, index.html, package.json, vite.config.ts, tsconfigs, eslint config, env.d.ts, .editorconfig, .oxfmtrc.json, .oxlintrc.json) into `frontend/`
+3. Update any absolute import paths if needed (the `@/` alias in vite.config.ts is relative, so it should work)
+4. Verify `cd frontend && bun install && bun run build` works
+5. Commit the restructure
 
 ## Deployment (Raspberry Pi)
 
