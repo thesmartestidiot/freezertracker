@@ -17,7 +17,7 @@ A household inventory tracker for freezer contents. Built with a Vue 3 frontend 
 
 ## Project Structure
 
-```
+```text
 freezertracker/
 ├── backend/
 │   ├── main.py            # FastAPI app, CORS, lifespan
@@ -77,17 +77,17 @@ pytest
 
 ## API
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/items` | List items (optional `?tag=` filter) |
-| POST | `/api/items` | Create item |
-| PATCH | `/api/items/{id}` | Update item |
-| DELETE | `/api/items/{id}` | Delete item |
-| GET | `/api/items/{id}/history` | Quantity change log |
-| GET | `/api/tags` | List tags |
-| POST | `/api/tags` | Create tag |
-| DELETE | `/api/tags/{id}` | Delete tag |
-| GET | `/api/health` | Health check |
+| Method | Endpoint                  | Description                          |
+| ------ | ------------------------- | ------------------------------------ |
+| GET    | `/api/items`              | List items (optional `?tag=` filter) |
+| POST   | `/api/items`              | Create item                          |
+| PATCH  | `/api/items/{id}`         | Update item                          |
+| DELETE | `/api/items/{id}`         | Delete item                          |
+| GET    | `/api/items/{id}/history` | Quantity change log                  |
+| GET    | `/api/tags`               | List tags                            |
+| POST   | `/api/tags`               | Create tag                           |
+| DELETE | `/api/tags/{id}`          | Delete tag                           |
+| GET    | `/api/health`             | Health check                         |
 
 ## Deployment
 
