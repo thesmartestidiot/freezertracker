@@ -119,6 +119,11 @@ async function handleAddItem(name: string, unit: string | null, itemTags: string
   await loadData()
 }
 
+async function handleUpdateTags(id: number, tagNames: string[]) {
+  await updateItem(id, { tags: tagNames })
+  await loadData()
+}
+
 async function handleDeleteItem(id: number) {
   await deleteItem(id)
   await loadData()
@@ -210,7 +215,9 @@ onUnmounted(() => {
           <RowComp
             :item="item"
             :kiosk="true"
+            :all-tags="tags"
             @update-quantity="handleUpdateQuantity(item.id, $event)"
+            @update-tags="handleUpdateTags(item.id, $event)"
             @delete="handleDeleteItem(item.id)"
           />
         </div>
@@ -333,7 +340,9 @@ onUnmounted(() => {
             <RowComp
               :item="item"
               :kiosk="false"
+              :all-tags="tags"
               @update-quantity="handleUpdateQuantity(item.id, $event)"
+              @update-tags="handleUpdateTags(item.id, $event)"
               @delete="handleDeleteItem(item.id)"
             />
           </div>
