@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.database import init_db
+from backend.routers.items import router as items_router
+from backend.routers.tags import router as tags_router
 
 
 @asynccontextmanager
@@ -25,6 +27,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(items_router)
+app.include_router(tags_router)
 
 
 @app.get("/api/health")
