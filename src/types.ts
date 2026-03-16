@@ -1,4 +1,4 @@
-interface Row {
+export interface Row {
   id: number;
   label: string;
   quantity: number;

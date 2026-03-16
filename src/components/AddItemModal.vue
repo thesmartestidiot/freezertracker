@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 
-const emit = defineEmits<{
-  (e: 'add-item', value: string): void
-}>()
+const emit = defineEmits({
+  addItem: (value: string) => typeof value === 'string',
+})
 
 const isOpen = ref(false)
 const newItemLabel = ref('')
@@ -23,7 +23,7 @@ const closeModal = () => {
 const submitItem = () => {
   const label = newItemLabel.value.trim()
   if (label) {
-    emit('add-item', label)
+    emit('addItem', label)
     closeModal()
   }
 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Row } from '@/types'
+import type { Row } from '@/types'
 defineProps<{ row: Row }>()
-defineEmits<{
-  (e: 'update:quantity', value: number): void
-}>()
+defineEmits({
+  updateQuantity: (value: number) => typeof value === 'number',
+})
 </script>
 
 <template>
@@ -14,7 +14,7 @@ defineEmits<{
     <button
       type="button"
       class="flex items-center justify-center bg-gray-700 size-14 p-2 rounded"
-      @click="$emit('update:quantity', row.quantity - 1)"
+      @click="$emit('updateQuantity', row.quantity - 1)"
     >
       -
     </button>
@@ -22,7 +22,7 @@ defineEmits<{
     <button
       type="button"
       class="flex items-center justify-center bg-gray-700 size-14 p-2 rounded"
-      @click="$emit('update:quantity', row.quantity + 1)"
+      @click="$emit('updateQuantity', row.quantity + 1)"
     >
       +
     </button>

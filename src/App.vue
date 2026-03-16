@@ -2,8 +2,9 @@
 import { computed, reactive } from 'vue'
 import RowComp from '@/components/RowComp.vue'
 import AddItemModal from '@/components/AddItemModal.vue'
+import type { Row } from '@/types'
 
-const rows = reactive([
+const rows = reactive<Row[]>([
   { id: 1, label: 'Chuck Steak', quantity: 1 },
   { id: 2, label: 'Ribeye', quantity: 2 },
   { id: 3, label: 'T-Bone', quantity: 3 },
@@ -52,13 +53,13 @@ const addItem = (label: string) => {
           v-for="row in sortedRows"
           :key="row.id"
           :row="row"
-          @update:quantity="(value) => updateQuantity(row.id, value)"
+          @updateQuantity="updateQuantity(row.id, $event)"
         />
       </main>
 
       <footer class="flex justify-between items-center w-full border-t border-gray-700 p-4">
         <div class="text-xl text-gray-300">{{ sortedRows.length }} items</div>
-        <AddItemModal @add-item="addItem" />
+        <AddItemModal @addItem="addItem" />
       </footer>
     </div>
   </div>
