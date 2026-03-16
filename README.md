@@ -1,48 +1,104 @@
-# freezertracker
+# Freezer Tracker
 
-This template should help get you started developing with Vue 3 in Vite.
+A household inventory tracker for freezer contents. Built with a Vue 3 frontend and Python FastAPI backend, designed for use on a wall-mounted tablet (Raspberry Pi).
 
-## Recommended IDE Setup
+## Features
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- Add items with name, quantity, optional unit (lbs, bags, etc.), and tags
+- Increment/decrement quantities with large, touch-friendly buttons
+- Tag items with colored labels and filter the list by tag
+- Quantity change history logging
 
-## Recommended Browser Setup
+## Tech Stack
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- **Frontend:** Vue 3, TypeScript, Tailwind CSS, Vite
+- **Backend:** Python 3.14+, FastAPI, aiosqlite (SQLite)
+- **Deployment:** Nginx + Uvicorn on Raspberry Pi
 
-## Type Support for `.vue` Imports in TS
+## Project Structure
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-bun install
+```
+freezertracker/
+├── backend/
+│   ├── main.py            # FastAPI app, CORS, lifespan
+│   ├── database.py        # SQLite schema & connection
+│   ├── models.py          # Pydantic schemas
+│   ├── routers/
+│   │   ├── items.py       # Item CRUD + history
+│   │   └── tags.py        # Tag CRUD
+│   └── tests/
+├── frontend/
+│   ├── src/
+│   │   ├── App.vue        # Main app component
+│   │   ├── api.ts         # API service layer
+│   │   ├── types.ts       # TypeScript interfaces
+│   │   └── components/
+│   │       ├── RowComp.vue
+│   │       └── AddItemModal.vue
+│   └── vite.config.ts
+├── nginx.conf             # Reference deployment config
+└── docs/
 ```
 
-### Compile and Hot-Reload for Development
+## Development
+
+### Prerequisites
+
+- Python 3.14+
+- [Bun](https://bun.sh/)
+
+### Backend
 
 ```sh
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+The API runs at `http://localhost:8000`.
+
+### Frontend
+
+```sh
+cd frontend
+bun install
 bun dev
 ```
 
-### Type-Check, Compile and Minify for Production
+The dev server runs at `http://localhost:5173` and proxies `/api` requests to the backend.
+
+### Tests
 
 ```sh
-bun run build
+cd backend
+pytest
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/items` | List items (optional `?tag=` filter) |
+| POST | `/api/items` | Create item |
+| PATCH | `/api/items/{id}` | Update item |
+| DELETE | `/api/items/{id}` | Delete item |
+| GET | `/api/items/{id}/history` | Quantity change log |
+| GET | `/api/tags` | List tags |
+| POST | `/api/tags` | Create tag |
+| DELETE | `/api/tags/{id}` | Delete tag |
+| GET | `/api/health` | Health check |
+
+## Deployment
+
+The app is designed to run on a Raspberry Pi with nginx serving the built frontend and proxying API requests to uvicorn. See `nginx.conf` for the reference configuration.
 
 ```sh
-bun lint
+# Build frontend
+cd frontend && bun run build
+
+# Run backend
+cd backend && uvicorn main:app --host 0.0.0.0
 ```
+
+The database is a SQLite file (configurable via `DB_PATH` env var, defaults to `freezertracker.db`).
