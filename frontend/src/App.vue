@@ -1,40 +1,51 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import RowComp from '@/components/RowComp.vue'
 import AddItemModal from '@/components/AddItemModal.vue'
-import type { Row } from '@/types'
+import type { Item, Tag } from '@/types'
+import { fetchItems, fetchTags, createItem, updateItem, deleteItem } from '@/api'
 
-const rows = reactive<Row[]>([
-  { id: 1, label: 'Chuck Steak', quantity: 1 },
-  { id: 2, label: 'Ribeye', quantity: 2 },
-  { id: 3, label: 'T-Bone', quantity: 3 },
-  { id: 4, label: 'Sirloin', quantity: 4 },
-  { id: 5, label: 'Brisket', quantity: 5 },
-  { id: 6, label: 'Flank', quantity: 6 },
-  { id: 7, label: 'Skirt', quantity: 7 },
-  { id: 8, label: 'New Item', quantity: 1 },
-  { id: 9, label: 'Another Item', quantity: 2 },
-  { id: 10, label: 'More Item', quantity: 3 },
-  { id: 11, label: 'Chicken', quantity: 4 },
-  { id: 12, label: 'Pork', quantity: 5 },
-  { id: 13, label: 'Fish', quantity: 6 },
-])
+const items = ref<Item[]>([])
+const tags = ref<Tag[]>([])
+const activeTag = ref<string | null>(null)
 
-const sortedRows = computed(() => {
-  return [...rows].sort((a, b) => a.label.localeCompare(b.label))
+const sortedItems = computed(() => {
+  return [...items.value].sort((a, b) => a.name.localeCompare(b.name))
 })
 
-const updateQuantity = (id: number, quantity: number) => {
-  const row = rows.find((r) => r.id === id)
-  if (row) {
-    row.quantity = Math.max(0, quantity)
-  }
+const filteredItems = computed(() => {
+  if (!activeTag.value) return sortedItems.value
+  return sortedItems.value.filter((item) =>
+    item.tags.some((t) => t.name.toLowerCase() === activeTag.value!.toLowerCase()),
+  )
+})
+
+async function loadData() {
+  const [itemData, tagData] = await Promise.all([fetchItems(), fetchTags()])
+  items.value = itemData
+  tags.value = tagData
 }
 
-const addItem = (label: string) => {
-  const newId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1
-  rows.push({ id: newId, label, quantity: 1 })
+async function handleUpdateQuantity(id: number, quantity: number) {
+  await updateItem(id, { quantity: Math.max(0, quantity) })
+  await loadData()
 }
+
+async function handleAddItem(name: string, unit: string | null, itemTags: string[]) {
+  await createItem({ name, unit: unit || undefined, tags: itemTags })
+  await loadData()
+}
+
+async function handleDeleteItem(id: number) {
+  await deleteItem(id)
+  await loadData()
+}
+
+function toggleTag(tagName: string) {
+  activeTag.value = activeTag.value === tagName ? null : tagName
+}
+
+onMounted(loadData)
 </script>
 
 <template>
@@ -42,24 +53,42 @@ const addItem = (label: string) => {
     <div class="mx-auto flex h-full w-full flex-col overflow-hidden rounded-lg bg-gray-800">
       <header class="flex items-center gap-4 border-b border-gray-700 p-4">
         <img src="./assets/doggo.png" alt="" class="h-14 w-14 rounded-lg object-cover" />
-        <div>
+        <div class="flex-1">
           <h1 class="text-xl font-semibold text-white">Freezer Tracker</h1>
           <p class="text-sm text-gray-300">Manage your inventory</p>
         </div>
       </header>
 
+      <div v-if="tags.length" class="flex gap-2 overflow-x-auto border-b border-gray-700 px-4 py-3">
+        <button
+          v-for="tag in tags"
+          :key="tag.id"
+          type="button"
+          class="shrink-0 rounded-full px-3 py-1 text-sm font-medium transition"
+          :class="
+            activeTag === tag.name
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          "
+          @click="toggleTag(tag.name)"
+        >
+          {{ tag.name }}
+        </button>
+      </div>
+
       <main class="min-h-0 flex-1 overflow-y-auto p-4 space-y-4">
         <RowComp
-          v-for="row in sortedRows"
-          :key="row.id"
-          :row="row"
-          @updateQuantity="updateQuantity(row.id, $event)"
+          v-for="item in filteredItems"
+          :key="item.id"
+          :item="item"
+          @update-quantity="handleUpdateQuantity(item.id, $event)"
+          @delete="handleDeleteItem(item.id)"
         />
       </main>
 
       <footer class="flex justify-between items-center w-full border-t border-gray-700 p-4">
-        <div class="text-xl text-gray-300">{{ sortedRows.length }} items</div>
-        <AddItemModal @addItem="addItem" />
+        <div class="text-xl text-gray-300">{{ filteredItems.length }} items</div>
+        <AddItemModal :tags="tags" @add-item="handleAddItem" />
       </footer>
     </div>
   </div>
